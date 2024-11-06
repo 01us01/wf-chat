@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockJS-client/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>Chat Room</h1>
+<div>
+    <input type="text" id="message" placeholder="Type your message" />
+    <button onclick="sendMessage()">Send</button>
+</div>
+<div id="chat"></div>
+
+<script>
+    // WebSocket 연결 설정
+    const socket = new SockJS('/chat'); // Spring Boot WebSocket 엔드포인트
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+        stompClient.subscribe('/topic/public', function (messageOutput) {
+            const message = JSON.parse(messageOutput.body);
+            showMessage(message);
+        });
+    });
+
+    function sendMessage() {
+        const messageContent = document.getElementById('message').value;
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({'content': messageContent}));
+    }
+
+    function showMessage(message) {
+        const chatDiv = document.getElementById('chat');
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message.sender + ": " + message.content;
+        chatDiv.appendChild(messageElement);
+    }
+</script>
+</body>
+</html>
